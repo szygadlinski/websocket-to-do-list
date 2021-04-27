@@ -4,7 +4,7 @@ const socket = require('socket.io');
 
 const app = express();
 
-const tasks = [];
+let tasks = [];
 
 const corsOptions = {
   origin: 'http://localhost:3000',
@@ -26,13 +26,14 @@ const io = socket(server);
 io.on('connection', socket => {
   socket.emit('updateData', tasks);
 
-  socket.on('addTask', taskName => {
-    tasks.push(taskName);
-    socket.broadcast.emit('addTask', taskName);
+  socket.on('addTask', task => {
+    tasks.push(task);
+    socket.broadcast.emit('addTask', task);
   });
 
-  socket.on('removeTask', taskIndex => {
-    tasks.splice(taskIndex, 1);
-    socket.broadcast.emit('removeTask', taskIndex);
+  socket.on('removeTask', taskId => {
+    const taskToRemove = tasks.findIndex(task => task.id === taskId);
+    tasks.splice(taskToRemove, 1);
+    socket.broadcast.emit('removeTask', taskId);
   });
 });

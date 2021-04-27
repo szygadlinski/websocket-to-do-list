@@ -1,5 +1,6 @@
 import React from 'react';
 import io from 'socket.io-client';
+import { v4 as uuidv4 } from 'uuid';
 
 class App extends React.Component {
   state = {
@@ -23,9 +24,11 @@ class App extends React.Component {
 
   addTask = task => {
     let newTasks = this.state.tasks;
-    if (!task || !task.trim()) {
+    const repeatedTag = newTasks.find(newTask => newTask.name === task.name);
+
+    if (!task.name || !task.name.trim()) {
       alert('You have to type something first!');
-    } else if (newTasks.includes(task)) {
+    } else if (repeatedTag) {
       alert('Your task is already on the list!');
     } else {
       newTasks.push(task);
@@ -33,19 +36,23 @@ class App extends React.Component {
     }
   }
 
-  removeTask = (index, localRemoval) => {
-    let newTasks = [];
-    for(let task of this.state.tasks){
-      if(this.state.tasks.indexOf(task) !== index) newTasks.push(task)
-    }
+  removeTask = (taskId, localRemoval) => {
+    let newTasks = this.state.tasks;
+    newTasks = newTasks.filter(task => task.id !== taskId);
     this.setState({ tasks: newTasks });
-    if(localRemoval) this.socket.emit('removeTask', index)
+    if(localRemoval) this.socket.emit('removeTask', taskId);
   }
 
   submitForm = event => {
     event.preventDefault();
-    this.addTask(this.state.taskName);
-    this.socket.emit('addTask', this.state.taskName)
+
+    const newTask = {
+      id: uuidv4(),
+      name: this.state.taskName,
+    }
+    this.addTask(newTask);
+
+    this.socket.emit('addTask', newTask)
     this.setState({ taskName: '' });
   }
 
@@ -63,11 +70,11 @@ class App extends React.Component {
 
           <ul className="tasks-list" id="tasks-list">
             {tasks.map(task => (
-              <li className="task" key={tasks.indexOf(task)}>
-                {task}
+              <li className="task" key={task.id}>
+                {task.name}
                 <button
                   className="btn btn-red"
-                  onClick={localRemoval => this.removeTask(tasks.indexOf(task), localRemoval)}
+                  onClick={localRemoval => this.removeTask(task.id, localRemoval)}
                 >
                   Remove
                 </button>
