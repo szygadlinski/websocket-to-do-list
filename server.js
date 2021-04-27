@@ -1,9 +1,17 @@
 const express = require('express');
+const cors = require('cors');
 const socket = require('socket.io');
 
 const app = express();
 
 const tasks = [];
+
+const corsOptions = {
+  origin: 'http://localhost:3000',
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
 
 app.use((req, res) => {
   res.status(404).send('<h1>404 - page not found...</h1>');
@@ -18,13 +26,13 @@ const io = socket(server);
 io.on('connection', socket => {
   socket.emit('updateData', tasks);
 
-  socket.on('addTask', task => {
-    tasks.push(task);
-    socket.broadcast.emit('addTask', tasks);
+  socket.on('addTask', taskName => {
+    tasks.push(taskName);
+    socket.broadcast.emit('addTask', taskName);
   });
 
-  socket.on('removeTask', taskId => {
-    tasks.splice(taskId, 1);
-    socket.broadcast.emit('removeTask', tasks);
+  socket.on('removeTask', taskIndex => {
+    tasks.splice(taskIndex, 1);
+    socket.broadcast.emit('removeTask', taskIndex);
   });
 });
